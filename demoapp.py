@@ -12,6 +12,7 @@ def ui_full(launch_kwargs):
             This is your private demo for [MusicClassifier](https://github.com/facebookresearch/audiocraft),
             a simple and controllable model for music similarities
             presented at: ["Simple and Controllable Music Generation"](https://huggingface.co/papers/2306.05284)
+            One more change to make sure its updating :)
             """
         )
         with gr.Row():
