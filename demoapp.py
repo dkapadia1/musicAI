@@ -25,10 +25,16 @@ def random_top_20(folderPath, firstSong, fun, duration):
             break
         distance, temp1, temp2 = model.get_similarity_file(folderPath + '/' + firstSong, folderPath  + '/' + song, seconds = duration, tens1 = firstsongEmb, fun = fun)
         pcdistance = model.convToPercent(temp1, temp2, distance, fun=fun)
-        distances.append((pcdistance.item(), folderPath  + '/' + song))
+        distances.append((pcdistance, folderPath  + '/' + song))
         del temp1, temp2
-
-    return [item for pair in distances for item in pair]
+    distances.sort(key=lambda x: x[0])
+    return distances
+def random_top_20_format(*args):
+    a = random_top_20(*args)
+    re = []
+    for pair in a:
+        re.append(pair[0].item())
+        re.append(pair[1])
 def ui_full(launch_kwargs):
     with gr.Blocks() as interface:
         audios = []
@@ -64,7 +70,7 @@ def ui_full(launch_kwargs):
                         output = gr.Audio(elem_id = i, visible = True, interactive= False, show_download_button= False, waveform_options={"show_controls" :False})
                         audios.append(output)
         # Define what happens when the "Submit" button is clicked
-        submit.click(fn=random_top_20, inputs=[folder_id, first_song,simfunc, duration], outputs=audios)
+        submit.click(fn=random_top_20_format, inputs=[folder_id, first_song,simfunc, duration], outputs=audios)
 
         interface.queue().launch(**launch_kwargs)
 import argparse
