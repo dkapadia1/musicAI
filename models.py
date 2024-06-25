@@ -4,10 +4,11 @@ from torchaudio import load
 from audiocraft.models import CompressionModel
 import pysdtw
 from math import e
+import torch.nn.functional as F
 class CUDAModel():
     model : CompressionModel = None
     def __init__(self):
-      self.model = CompressionModel.get_pretrained('facebook/encodec_32khz', device = dev)
+      self.model = CompressionModel.get_pretrained('facebook/encodec_32khz', device = "cuda")
     def get_latent_decoding(self, audio_file_location, seconds = 5, start = 0, end = False):
         """
         Takes in an audio file location and returns the latent decoding of the audio file.

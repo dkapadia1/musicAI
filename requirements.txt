@@ -1,4 +1,4 @@
-gradio
-torchaudio
 audiocraft
+gradio
 numpy
+pysdtw
