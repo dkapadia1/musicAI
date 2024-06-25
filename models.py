@@ -152,7 +152,7 @@ def get_similarity_sdtw(tens1, tens2):
     split_tens2 = torch.split(perm_tens2, 50, dim=0)
     stacked_tens2 = torch.stack(split_tens2, dim=0)
     del perm_tens1, perm_tens2, split_tens1, split_tens2
-    return (1 - sdtw(stacked_tens1, stacked_tens2).sum()), tens1, tens2
+    return ((1 - sdtw(stacked_tens1, stacked_tens2)).sum()), tens1, tens2
 def sigmoid_transform(x):
     """
     Sigmoid function

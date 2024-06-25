@@ -11,7 +11,7 @@ def random_top_20(folderPath, firstSong, fun, duration):
     import torch
     assert torch.cuda.is_available()
     assert os.path.isdir(folderPath)
-    assert firstSong in os.listdir(folderPath)
+    assert firstSong in os.listdir(folderPath) and firstSong.endswith('.mp3')
     assert fun is not None
     assert fun == 'lin' or isinstance(duration, int)
     from models import CUDAModel
@@ -34,7 +34,7 @@ def random_top_20(folderPath, firstSong, fun, duration):
         pcdistance = model.convToPercent(temp1, temp2, distance, fun=fun)
         distances.append((pcdistance, folderPath  + '/' + song))
         del temp1, temp2
-    distances.sort(key=lambda x: x[0])
+    distances.sort(key=lambda x: -x[0])
     return distances
 def random_top_20_format(*args):
     a = random_top_20(*args)
