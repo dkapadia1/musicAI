@@ -81,9 +81,9 @@ class CUDAModel():
     def convToPercent(self, tens1, tens2, distance, fun):
         if fun == 'sdtw':
             batches = int(min(tens1.size(2), tens2.size(2)) / 50)
-            sigmoid_transform(distance - (batches * 10))
+            return sigmoid_transform(distance - (batches * 10))
         else:
-            sigmoid_transform(distance)
+            return sigmoid_transform(distance)
 T = torch.Tensor
 def cosine_distance(x: T, y: T) -> T:
     """Computes the pairwise cosine similarity matrix between x and y."""
