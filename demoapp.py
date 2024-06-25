@@ -45,7 +45,9 @@ def random_top_20_format(*args):
     return re
 def ui_full(launch_kwargs):
     with gr.Blocks() as interface:
+        maximum=20
         audios = []
+        prefs = []
         gr.Markdown(
             """
             # MusicClassifier
@@ -66,20 +68,45 @@ def ui_full(launch_kwargs):
                 with gr.Row():
                     duration = gr.Slider(minimum=1, maximum=120, value=10, label="Duration", interactive=True)
                 with gr.Row():
-                    topk = gr.Number(label="Top-k", value=20, interactive=True, maximum=20, minimum= 0, )
-                    topp = gr.Number(label="Top-p", value=0, interactive=True)
-                    temperature = gr.Number(label="Temperature", value=1.0, interactive=True)
-                    cfg_coef = gr.Number(label="Classifier Free Guidance", value=3.0, interactive=True)
+                    datafile = gr.File(label="datafile", interactive=True)
+                    loaddata = gr.Button("Create Data File")
+                    save = gr.Button("Save Data File")
+
+        with gr.Row():  
             with gr.Column():
-                for i in range(topk.maximum):
+                gr.Markdown(
+                    """
+                    ## Instructions
+                    1. Enter the folder path to your music folder.
+                    2. Enter the name of the first song.
+                    3. Select the similarity function.
+                    4. Adjust the duration of the audio clips.
+                    5. Click "Get random 20 and sort" to get the top 20 most similar songs.
+                    """
+                )
+            with gr.Column():
+                gr.Markdown(
+                    """
+                    ## Notes
+                    * The similarity function can be either "lin" or "sdtw".
+                    * "lin" is a simple cosine similarity, while "sdtw" is a more complex similarity function that takes into account the time series nature of the audio.
+                    * The duration of the audio clips is in seconds.
+                    * The top 20 most similar songs are sorted in descending order of similarity.
+                    """
+                )
+            with gr.Column():
+                for i in range(maximum):
                     with gr.Row():
                         similarity = gr.Number(label = 'similarity')
                         audios.append(similarity)
                         output = gr.Audio(elem_id = i, visible = True, interactive= False, show_download_button= False, waveform_options={"show_controls" :False})
                         audios.append(output)
+                    with gr.Row():
+                        pref = gr.Radio(["higher", "lower"])
+                        prefs.append(pref)
         # Define what happens when the "Submit" button is clicked
         submit.click(fn=random_top_20_format, inputs=[folder_id, first_song,simfunc, duration], outputs=audios)
-
+        
         interface.queue().launch(**launch_kwargs)
 import argparse
 import logging
