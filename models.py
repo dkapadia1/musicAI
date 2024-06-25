@@ -118,16 +118,16 @@ def get_similarity_lin(tens1, tens2):
   # Check if the tensors have the same shape
     if tens1.shape != tens2.shape:
         #assumes shape is [1, 128, x]. should never be different but you never know
-        assert len(tens1.shape) == len(tens2.shape) and len(tens.shape) == 3
+        assert len(tens1.shape) == len(tens2.shape) and len(tens1.shape) == 3
         # Get the minimum dimension of the tensors
         min_dim = min(tens1.shape[2], tens2.shape[2])
-        tens = tens1[:, :, :min_dim]
+        tens1 = tens1[:, :, :min_dim]
         tens2 = tens2[:, :, :min_dim]
         #sliceing should work because their is only a little amount of information added and removed through the use of larger files
     # Calculate the cosine similarity between the two tensors.
-    similarity = torch.nn.functional.cosine_similarity(tens, tens2, dim=1)
+    similarity = torch.nn.functional.cosine_similarity(tens1, tens2, dim=1)
 
-    return(similarity.sum(), tens, tens2)
+    return(similarity.sum(), tens1, tens2)
 def get_similarity_sdtw(tens1, tens2):
     if tens1.shape[2] % 50 != 0:
         tens1 = tens1[:,:, :-1 * (tens1.shape[2] % 50)]

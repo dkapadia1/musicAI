@@ -23,7 +23,7 @@ def random_top_20(folderPath, firstSong, fun, duration):
             continue
         if i > 20:
             break
-        distance, temp1, temp2 = model.get_similarity_file(folderPath + '/' + firstSong, folderPath  + '/' + song, seconds = duration, tens1 = firstsongEmb)
+        distance, temp1, temp2 = model.get_similarity_file(folderPath + '/' + firstSong, folderPath  + '/' + song, seconds = duration, tens1 = firstsongEmb, fun = fun)
         pcdistance = model.convToPercent(temp1, temp2, distance, fun=fun)
         distances.append((pcdistance, folderPath  + '/' + song))
         del temp1, temp2
