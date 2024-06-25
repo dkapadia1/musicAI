@@ -1,6 +1,6 @@
 import gradio as gr
 import numpy as np
-from random import choice, shuffle
+from random import choice, sample
 from os import listdir
 #ui from https://github.com/facebookresearch/audiocraft/blob/72cb16f9fb239e9cf03f7bd997198c7d7a67a01c/demos/musicgen_app.py
 #conda activate ai && python -m demoapp --share
@@ -17,8 +17,8 @@ def random_top_20(folderPath, firstSong, fun, duration):
     from models import CUDAModel
     model = CUDAModel()
     distances = []
-    firstsongEmb = model.get_latent_decoding(folderPath + firstSong, seconds = duration)
-    for (i, song) in enumerate(shuffle(os.listdir(folderPath))):
+    firstsongEmb = model.get_latent_decoding(folderPath + '/'+ firstSong, seconds = duration)
+    for (i, song) in enumerate(sample(os.listdir(folderPath), 20)):
         if song == firstSong:
             continue
         if i > 20:
