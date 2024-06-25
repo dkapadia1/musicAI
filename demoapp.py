@@ -1,28 +1,34 @@
 import gradio as gr
 import numpy as np
-from random import choice
+from random import choice, shuffle
 from os import listdir
 #ui from https://github.com/facebookresearch/audiocraft/blob/72cb16f9fb239e9cf03f7bd997198c7d7a67a01c/demos/musicgen_app.py
-INTERRUPTING = False
 #conda activate ai && python -m demoapp --share
-def run_sampler(folder_id, duration, topk, topp, temperature, cfg_coef, max):
-    # Your code to run the audio sampler with the given parameters
-    # For demonstration, we'll return two random audio signals
-    sample_rate = 22050  # Sample rate in Hz
-    t = np.linspace(0, duration, int(sample_rate * duration), False)
-    signal1 = 0.5 * np.sin(2 * np.pi * 220 * t)  # A 220 Hz sine wave
-    signal2 = 0.5 * np.sin(2 * np.pi * 440 * t)  # A 440 Hz sine wave
-    signals = []
-    for i in range(topk):
-        if i % 2 == 0:
-            signals.append((sample_rate, signal1))
-        else:
-            signals.append((sample_rate, signal2))
-    while len(signals) <= 20:
-        signals.append(sample_rate, t)
-    return signals
-def random_fsong(folderID):
-    return choice(listdir(folderID))
+def random_fsong(folderPath):
+    return choice(listdir(folderPath))
+def random_top_20(folderPath, firstSong, fun, duration):
+    #asserts
+    import torch
+    assert torch.cuda.is_available()
+    assert os.path.isdir(folderPath)
+    assert firstSong in os.listdir(folderPath)
+    assert fun is not None
+    assert fun == 'lin' or isinstance(duration, int)
+    from models import CUDAModel
+    model = CUDAModel()
+    distances = []
+    firstsongEmb = model.get_latent_decoding(folderPath + firstSong, seconds = duration)
+    for (i, song) in enumerate(shuffle(os.listdir(folderPath))):
+        if song == firstSong:
+            continue
+        if i > 20:
+            break
+        distance, temp1, temp2 = model.get_similarity_file(folderPath + firstSong, folderPath + song, seconds = duration, tens1 = firstsongEmb)
+        pcdistance = model.convToPercent(temp1, temp2, distance, fun=fun)
+        distances.append((pcdistance, folderPath + song))
+        del temp1, temp2
+
+    return [item for pair in distances for item in pair]
 def ui_full(launch_kwargs):
     with gr.Blocks() as interface:
         audios = []
@@ -37,28 +43,28 @@ def ui_full(launch_kwargs):
         with gr.Row():
             with gr.Column():
                 with gr.Row():
-                    folder_id = gr.Text(label="folder Id", interactive=True, value = "examplemusic")
+                    folder_id = gr.Text(label="folder Path", interactive=True, value = "examplemusic")
                     first_song = gr.Text(label = "first Song", interactive= True)
+                    simfunc = gr.Radio(['lin', 'sdtw'])
                 with gr.Row():
-                    submit = gr.Button("Process Folder")
-                    def interrupt():
-                        global INTERRUPTING
-                        INTERRUPTING = True
-                    _ = gr.Button("Get top 20").click(fn=interrupt, queue=False)
                     _ = gr.Button("Random First song").click(fn=random_fsong, queue=False, inputs=[folder_id], outputs=[first_song])
+                    submit = gr.Button("Get random 20 and sort")
                 with gr.Row():
                     duration = gr.Slider(minimum=1, maximum=120, value=10, label="Duration", interactive=True)
                 with gr.Row():
-                    topk = gr.Number(label="Top-k", value=20, interactive=True, maximum=50, minimum= 0, )
+                    topk = gr.Number(label="Top-k", value=20, interactive=True, maximum=20, minimum= 0, )
                     topp = gr.Number(label="Top-p", value=0, interactive=True)
                     temperature = gr.Number(label="Temperature", value=1.0, interactive=True)
                     cfg_coef = gr.Number(label="Classifier Free Guidance", value=3.0, interactive=True)
             with gr.Column():
                 for i in range(topk.maximum):
-                    output = gr.Audio(elem_id = i, visible = True, interactive= False, show_download_button= False, waveform_options={"show_controls" :False})
-                    audios.append(output)
+                    with gr.Row():
+                        similarity = gr.Number(label = 'similarity')
+                        audios.append(similarity)
+                        output = gr.Audio(elem_id = i, visible = True, interactive= False, show_download_button= False, waveform_options={"show_controls" :False})
+                        audios.append(output)
         # Define what happens when the "Submit" button is clicked
-        submit.click(fn=run_sampler, inputs=[folder_id, duration, topk, topp, temperature, cfg_coef], outputs=audios)
+        submit.click(fn=random_top_20, inputs=[folder_id, first_song,simfunc, duration], outputs=audios)
 
         interface.queue().launch(**launch_kwargs)
 import argparse

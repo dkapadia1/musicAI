@@ -1,3 +1,4 @@
 gradio
-#audiocraft
+torchaudio
+audiocraft
 numpy
