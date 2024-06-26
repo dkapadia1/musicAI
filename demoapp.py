@@ -5,8 +5,9 @@ from os import listdir
 #ui from https://github.com/facebookresearch/audiocraft/blob/72cb16f9fb239e9cf03f7bd997198c7d7a67a01c/demos/musicgen_app.py
 #conda activate ai && python -m demoapp --share
 def random_fsong(folderPath):
-    return choice(listdir(folderPath))
-def random_top_20(folderPath, firstSong, fun, duration):
+    c= choice(listdir(folderPath))
+    return [c, folderPath + '/' + c]
+def random_top_20(folderPath, firstSong, fun, duration, remove_voice):
     #asserts
     import torch
     assert torch.cuda.is_available()
@@ -22,15 +23,19 @@ def random_top_20(folderPath, firstSong, fun, duration):
     shuffle(sample)
     tempsample = sample
     sample = []
-    for i in tempsample:
-        if i.endswith('mp3') and i != firstSong:
-            sample.append(i)
+    k = 0
+    for song in tempsample:
+        if song.endswith('mp3') and song != firstSong:
+            sample.append(song)
+            k+=1
+        if k >= 20:
+            break
     for (i, song) in enumerate(sample):
         if song == firstSong:
             continue
         if i > 20:
             break
-        distance, temp1, temp2 = model.get_similarity_file(folderPath + '/' + firstSong, folderPath  + '/' + song, seconds = duration, tens1 = firstsongEmb, fun = fun)
+        distance, temp1, temp2 = model.get_similarity_file(folderPath + '/' + firstSong, folderPath  + '/' + song, seconds = duration, tens1 = firstsongEmb, fun = fun, remove_voice = remove_voice)
         pcdistance = model.convToPercent(temp1, temp2, distance, fun=fun)
         distances.append((pcdistance, folderPath  + '/' + song))
         del temp1, temp2
@@ -61,9 +66,14 @@ def ui_full(launch_kwargs):
                 with gr.Row():
                     folder_id = gr.Text(label="folder Path", interactive=True, value = "examplemusic")
                     first_song = gr.Text(label = "first Song", interactive= True)
-                    simfunc = gr.Radio(['lin', 'sdtw'])
+                    first_song_aud = gr.Audio(label = "first Song")
+                    with gr.Column():
+                        gr.Markdown(value = "Similarity Function")
+                        simfunc = gr.Radio(['lin', 'sdtw'])
+                        gr.Markdown(value = "Remove Voice?")
+                        remove = gr.Checkbox(value = False)
                 with gr.Row():
-                    _ = gr.Button("Random First song").click(fn=random_fsong, queue=False, inputs=[folder_id], outputs=[first_song])
+                    _ = gr.Button("Random First song").click(fn=random_fsong, queue=False, inputs=[folder_id], outputs=[first_song, first_song_aud])
                     submit = gr.Button("Get random 20 and sort")
                 with gr.Row():
                     duration = gr.Slider(minimum=1, maximum=120, value=10, label="Duration", interactive=True)
@@ -105,8 +115,8 @@ def ui_full(launch_kwargs):
                         pref = gr.Radio(["higher", "lower"])
                         prefs.append(pref)
         # Define what happens when the "Submit" button is clicked
-        submit.click(fn=random_top_20_format, inputs=[folder_id, first_song,simfunc, duration], outputs=audios)
-        
+        submit.click(fn=random_top_20_format, inputs=[folder_id, first_song,simfunc, duration, remove], outputs=audios)
+
         interface.queue().launch(**launch_kwargs)
 import argparse
 import logging

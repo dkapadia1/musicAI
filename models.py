@@ -5,11 +5,12 @@ from audiocraft.models import CompressionModel
 import pysdtw
 from math import e
 import torch.nn.functional as F
+import demucs.api
 class CUDAModel():
     model : CompressionModel = None
     def __init__(self):
       self.model = CompressionModel.get_pretrained('facebook/encodec_32khz', device = "cuda")
-    def get_latent_decoding(self, audio_file_location, seconds = 5, start = 0, end = False):
+    def get_latent_decoding(self, audio_file_location, seconds = 5, start = 0, end = False, remove_voice = False):
         """
         Takes in an audio file location and returns the latent decoding of the audio file.
 
@@ -25,6 +26,12 @@ class CUDAModel():
         # Resample the audio to 32000 Hz
         resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=32000)
         audio = resampler(audio)
+        #if remove_voice remove voice
+        if remove_voice:
+            separator = demucs.api.Separator()
+            origin, separated = separator.separate_tensor(audio)
+            audio = separated['drums'] + separated['bass'] + separated['other']
+            del origin, separated
         # Trim the audio to the desired length
 
         if end:
@@ -60,7 +67,7 @@ class CUDAModel():
         return get_similarity_sdtw(tens1, tens2)
        else:
         raise NotImplementedError()
-    def get_similarity_file(self,file1, file2, seconds = 5, start1 = 0, start2 = 0,tens1 = None, tens2 = None, fun = "lin"):
+    def get_similarity_file(self,file1, file2, seconds = 5, start1 = 0, start2 = 0,tens1 = None, tens2 = None, fun = "lin", remove_voice : bool=  False):
         """
         Takes in two audio file locations and returns the cosine similarity between them.
 
@@ -73,9 +80,9 @@ class CUDAModel():
             """
             #get the latent decoding of the file
         if tens1 is None:
-            tens1 = self.get_latent_decoding(file1, seconds = seconds, start = start1)
+            tens1 = self.get_latent_decoding(file1, seconds = seconds, start = start1, remove_voice=remove_voice)
         if tens2 is None:
-            tens2 = self.get_latent_decoding(file2, seconds = seconds, start = start2)
+            tens2 = self.get_latent_decoding(file2, seconds = seconds, start = start2, remove_voice=remove_voice)
             #get the similarity
         return self.get_similarity(tens1, tens2, fun=fun)
     def convToPercent(self, tens1, tens2, distance, fun):
